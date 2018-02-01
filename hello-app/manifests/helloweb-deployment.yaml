@@ -10,7 +10,17 @@ spec:
       labels:
         app: hello
         tier: web
+        gitsha: "${GIT_SHA}"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  gitsha: "${GIT_SHA}"
+                matchExpressions:
+                  - {key: api, operator: In, values: [hello]}
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: hello-app
         image: gcr.io/google-samples/hello-app:1.0
