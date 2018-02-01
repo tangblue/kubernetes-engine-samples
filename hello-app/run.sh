@@ -6,17 +6,20 @@ VERSION="Version: ${GIT_SHA}, build at: ${BUILD_DATE}"
 
 export GIT_SHA BUILD_DATE VERSION
 
-case $1 in
+COMMAND=$1
+shift 1
+
+case ${COMMAND} in
     "build")
-        go build -ldflags "-X \"main.version=${VERSION}\"" main.go
+        go build -ldflags "-X \"main.version=${VERSION}\"" $@
         ;;
     "docker")
-        docker build . --build-arg VERSION="${VERSION}"
+        docker build . --build-arg VERSION="${VERSION}" $@
         ;;
     "deploy")
-        envsubst < manifests/helloweb-deployment.yaml | cat -
+        envsubst < manifests/helloweb-deployment.yaml | cat - $@
         ;;
     * )
-        echo "Unkown command: ${1}"
+        echo "Unkown command: ${COMMAND}"
         ;;
 esac
