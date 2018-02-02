@@ -11,7 +11,7 @@ shift 1
 
 case ${COMMAND} in
     "build")
-        CGO_ENABLED=0 GOOS=linux go build -ldflags "-linkmode external -extldflags -static -X \"main.version=${VERSION}\"" -a $@
+        CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-X \"main.version=${VERSION}\"" $@
         ;;
     "docker")
         docker build . $@
