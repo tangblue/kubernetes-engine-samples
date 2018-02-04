@@ -23,6 +23,6 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: hello-app
-        image: gcr.io/google-samples/hello-app:1.0
+        image: ${DOCKER_IMAGE}
         ports:
         - containerPort: 8080
