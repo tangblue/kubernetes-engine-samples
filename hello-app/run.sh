@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 if [ -z ${VERSION+x} ]; then
     GCR_HOST="asia.gcr.io"
@@ -15,7 +15,7 @@ function check_project_ID()
 {
     if [ -z ${PROJECT_ID+x} ]; then
         echo "Error: Unkown project ID. Set project ID by:"
-        echo "\texport PROJECT_ID=\"\$(gcloud config get-value project -q)\""
+        echo -e "\texport PROJECT_ID=\"\$(gcloud config get-value project -q)\""
         exit 1
     fi
 
