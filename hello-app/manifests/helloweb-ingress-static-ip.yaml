@@ -4,12 +4,17 @@ metadata:
   name: helloweb
   annotations:
     kubernetes.io/ingress.global-static-ip-name: helloweb-ip
+    ingress.kubernetes.io/rewrite-target: /
   labels:
     app: hello
 spec:
-  backend:
-    serviceName: helloweb-backend
-    servicePort: 8080
+  rules:
+  - http:
+      paths:
+      - path: /hello
+        backend:
+          serviceName: helloweb-backend
+          servicePort: 8080
 ---
 apiVersion: v1
 kind: Service
