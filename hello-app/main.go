@@ -22,12 +22,15 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 var version string
+var started time.Time
 
 func main() {
 	fmt.Println(version)
+	started = time.Now()
 
 	port := "8080"
 	if fromEnv := os.Getenv("PORT"); fromEnv != "" {
@@ -36,6 +39,8 @@ func main() {
 
 	server := http.NewServeMux()
 	server.HandleFunc("/", hello)
+	server.HandleFunc("/healthz", healthz)
+	server.HandleFunc("/readiness", readiness)
 	log.Printf("Server listening on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, server))
 }
@@ -46,6 +51,23 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, world!\n")
 	fmt.Fprintf(w, "Version: 1.0.0\n")
 	fmt.Fprintf(w, "Hostname: %s\n", host)
+}
+
+func healthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	w.Write([]byte("ok"))
+}
+
+func readiness(w http.ResponseWriter, r *http.Request) {
+	errMsg := ""
+	duration := time.Now().Sub(started)
+	if duration.Seconds() < 10 {
+		errMsg += "Database not ok.¥n"
+		http.Error(w, errMsg, http.StatusServiceUnavailable)
+	} else {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	}
 }
 
 // [END all]
