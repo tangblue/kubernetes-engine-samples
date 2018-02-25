@@ -62,7 +62,7 @@ func readiness(w http.ResponseWriter, r *http.Request) {
 	errMsg := ""
 	duration := time.Now().Sub(started)
 	if duration.Seconds() < 10 {
-		errMsg += "Database not ok.¥n"
+		errMsg += "Database not ok.\n"
 		http.Error(w, errMsg, http.StatusServiceUnavailable)
 	} else {
 		w.WriteHeader(200)
