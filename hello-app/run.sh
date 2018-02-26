@@ -28,15 +28,25 @@ shift 1
 
 case ${COMMAND} in
     "build")
-        CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-X \"main.version=${VERSION}\"" $@
+        echo "${VERSION}"
+        CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X \"main.version=${VERSION}\"" $@
         ;;
     "docker")
         check_project_ID
-        docker build . --build-arg VERSION="${VERSION}" -t ${DOCKER_IMAGE} $@
-        ;;
-    "push")
-        check_project_ID
-        gcloud docker -- push ${DOCKER_IMAGE}
+        ACTION="${1}"
+        shift 1
+        case ${ACTION} in
+            "build")
+                docker build . --build-arg VERSION="${VERSION}" -t ${DOCKER_IMAGE} $@
+                ;;
+            "push")
+                gcloud docker -- push ${DOCKER_IMAGE}
+                ;;
+            "*")
+                echo "Error: Unkown docker args: $@"
+                exit 1
+                ;;
+        esac
         ;;
     "deploy")
         check_project_ID
