@@ -45,7 +45,7 @@ case ${COMMAND} in
             "push")
                 gcloud docker -- push ${DOCKER_IMAGE}
                 ;;
-            "*")
+            *)
                 echo "Error: Unkown docker args: $@"
                 exit 1
                 ;;
@@ -54,19 +54,24 @@ case ${COMMAND} in
     "deploy")
         check_project_ID
         ACTION="${1:-test}"
-        if [ ${ACTION} == "apply" ]; then
-            ACTION="kubectl apply -f -"
-        elif [ ${ACTION} == "delete" ]; then
-            ACTION="kubectl delete -f -"
-        elif [ ${ACTION} == "test" ]; then
-            ACTION="cat -"
-        else
-            echo "Error: Unkown deploy args: $@"
-            exit 1
-        fi
+        case ${ACTION} in
+            "apply")
+                ACTION="kubectl apply -f -"
+                ;;
+            "delete")
+                ACTION="kubectl delete -f -"
+                ;;
+            "test")
+                ACTION="cat -"
+                ;;
+            *)
+                echo "Error: Unkown deploy args: $@"
+                exit 1
+                ;;
+        esac
         envsubst < manifests/helloweb-deployment.yaml | ${ACTION}
         ;;
-    * )
+    *)
         echo "Unkown command: ${COMMAND}"
         ;;
 esac
