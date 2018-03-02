@@ -39,6 +39,9 @@ case ${COMMAND} in
             "build")
                 docker build . --build-arg VERSION="${VERSION}" -t ${DOCKER_IMAGE} $@
                 ;;
+            "run")
+                docker run --rm -p 8080:8080 ${DOCKER_IMAGE} $@
+                ;;
             "push")
                 gcloud docker -- push ${DOCKER_IMAGE}
                 ;;
