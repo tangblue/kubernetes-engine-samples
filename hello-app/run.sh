@@ -1,26 +1,31 @@
 #! /bin/bash
 
-if [ -z ${VERSION+x} ]; then
-    GCR_HOST="asia.gcr.io"
-    IMAGE="hello-app"
+app_name="hello-app"
+gcr_host="asia.gcr.io"
+gip_name="global-static-ip-${app_name}"
+rip_name="region-static-ip-${app_name}"
 
-    GIT_SHA=`git describe --tags --always --dirty`
-    BUILD_DATE=`date -u +"%Y/%m/%d %H:%M:%S"`
-    VERSION="Version: ${GIT_SHA}, build at: ${BUILD_DATE}"
-
-    export GIT_SHA BUILD_DATE VERSION
+if [ -z ${APP_VERSION:+x} ]; then
+    git_sha=$(git describe --tags --always --dirty)
+    APP_VERSION="Version: ${git_sha}, build at: $(date -u --iso-8601='seconds')"
+    echo "${APP_VERSION}"
 fi
 
-function check_project_ID()
+function check_project()
 {
-    if [ -z ${PROJECT_ID+x} ]; then
+    if [ -z ${PROJECT_ID:+x} ]; then
         echo "Error: Unkown project ID. Set project ID by:"
-        echo -e "\texport PROJECT_ID=\"\$(gcloud config get-value project -q)\""
+        echo -e "  $ export PROJECT_ID=\"\$(gcloud config get-value project -q)\""
+        exit 1
+    fi
+    if [ -z ${REGION:+x} ]; then
+        echo "Error: Unkown region. Set region by:"
+        echo -e "  $ export REGION=\"\$(gcloud config get-value compute/region -q)\""
         exit 1
     fi
 
-    echo "Project ID: ${PROJECT_ID}, Image: ${IMAGE}, Git SHA: ${GIT_SHA}"
-    export DOCKER_IMAGE="${GCR_HOST}/${PROJECT_ID}/${IMAGE}:${GIT_SHA}"
+    echo "Project ID: ${PROJECT_ID}, Image: ${app_name}, Git SHA: ${git_sha}"
+    export DOCKER_IMAGE="${gcr_host}/${PROJECT_ID}/${app_name}:${git_sha}"
 }
 
 COMMAND=$1
@@ -28,16 +33,16 @@ shift 1
 
 case ${COMMAND} in
     "build")
-        echo "${VERSION}"
-        CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X \"main.version=${VERSION}\"" $@
+        CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X \"main.version=${APP_VERSION}\"" $@
         ;;
+
     "docker")
-        check_project_ID
-        ACTION="${1}"
+        check_project
+        action="${1}"
         shift 1
-        case ${ACTION} in
+        case ${action} in
             "build")
-                docker build . --build-arg VERSION="${VERSION}" -t ${DOCKER_IMAGE} $@
+                docker build . --build-arg APP_VERSION="${APP_VERSION}" -t ${DOCKER_IMAGE} $@
                 ;;
             "run")
                 docker run --rm -p 8080:8080 ${DOCKER_IMAGE} $@
@@ -51,26 +56,91 @@ case ${COMMAND} in
                 ;;
         esac
         ;;
+
     "deploy")
-        check_project_ID
-        ACTION="${1:-test}"
-        case ${ACTION} in
-            "apply")
-                ACTION="kubectl apply -f -"
-                ;;
-            "delete")
-                ACTION="kubectl delete -f -"
+        check_project
+        action="${1:-describe}"
+        case ${action} in
+            "apply" | "delete" | "describe")
+                action="kubectl ${action} -f -"
                 ;;
             "test")
-                ACTION="cat -"
+                action="cat -"
                 ;;
             *)
                 echo "Error: Unkown deploy args: $@"
                 exit 1
                 ;;
         esac
-        envsubst < manifests/helloweb-deployment.yaml | ${ACTION}
+        GIT_SHA=${git_sha} envsubst < manifests/helloweb-deployment.yaml | ${action}
         ;;
+
+    "ip")
+        check_project
+        action="${1:-describe}"
+        case ${action} in
+            "create" | "delete" | "describe")
+                case ${2} in
+                    "global")
+                        gcloud compute addresses ${action} ${gip_name} --global
+                        ;;
+                    "region")
+                        gcloud compute addresses ${action} ${rip_name} --region ${REGION}
+                        ;;
+                    *)
+                        echo "Error: Unkown ip args: $@"
+                        exit 1
+                        ;;
+                esac
+                ;;
+            *)
+                echo "Error: Unkown ip args: $@"
+                exit 1
+                ;;
+        esac
+        ;;
+
+    "service")
+        check_project
+        action="${1:-describe}"
+        case ${action} in
+            "apply" | "delete" | "describe")
+                action="kubectl ${action} -f -"
+                ;;
+            "test")
+                action="cat -"
+                ;;
+            *)
+                echo "Error: Unkown service args: $@"
+                exit 1
+                ;;
+        esac
+        rip="$(gcloud compute addresses describe --quiet ${rip_name} --region ${REGION})"
+        if [ -z ${rip:+x} ]; then
+            echo "Error: No region IP. Exiting ..."
+            exit 1
+        fi
+        REGION_STATIC_IP=${rip} envsubst < manifests/helloweb-service-static-ip.yaml | ${action}
+        ;;
+
+    "ingress")
+        check_project
+        action="${1:-describe}"
+        case ${action} in
+            "apply" | "delete" | "describe")
+                action="kubectl ${action} -f -"
+                ;;
+            "test")
+                action="cat -"
+                ;;
+            *)
+                echo "Error: Unkown service args: $@"
+                exit 1
+                ;;
+        esac
+        GLOBAL_STATIC_IP_NAME=${gip_name} envsubst < manifests/helloweb-ingress-static-ip.yaml | ${action}
+        ;;
+
     *)
         echo "Unkown command: ${COMMAND}"
         ;;

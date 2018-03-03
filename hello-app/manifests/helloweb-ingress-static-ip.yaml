@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: helloweb
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: helloweb-ip
+    kubernetes.io/ingress.global-static-ip-name: ${GLOBAL_STATIC_IP_NAME}
     ingress.kubernetes.io/rewrite-target: /
   labels:
     app: hello

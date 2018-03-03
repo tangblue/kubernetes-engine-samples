@@ -1,5 +1,5 @@
 FROM golang:1.8-alpine AS builder
-ARG VERSION
+ARG APP_VERSION
 WORKDIR /go/src/hello-app
 ADD . /go/src/hello-app
 RUN /bin/sh ./run.sh build
