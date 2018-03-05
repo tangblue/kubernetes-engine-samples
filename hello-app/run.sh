@@ -2,8 +2,8 @@
 
 app_name="hello-app"
 gcr_host="asia.gcr.io"
-gip_name="global-static-ip-${app_name}"
-rip_name="region-static-ip-${app_name}"
+gip_name="ingress-${app_name}"
+rip_name="service-${app_name}"
 
 if [ -z ${APP_VERSION:+x} ]; then
     git_sha=$(git describe --tags --always --dirty)
