@@ -134,7 +134,15 @@ case ${COMMAND} in
         check_project
         action="${1:-describe}"
         case ${action} in
-            "apply" | "delete" | "describe")
+            "apply")
+                gip="$(gcloud compute addresses describe ${gip_name} --global | grep -Eo '([0-9]*\.){3}[0-9]*')"
+                if [ -z ${gip:+x} ]; then
+                    echo "Error: No global IP. Exiting ..."
+                    exit 1
+                fi
+                action="kubectl ${action} -f -"
+                ;;
+            "delete" | "describe")
                 action="kubectl ${action} -f -"
                 ;;
             "test")
