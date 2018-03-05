@@ -7,7 +7,7 @@ rip_name="region-static-ip-${app_name}"
 
 if [ -z ${APP_VERSION:+x} ]; then
     git_sha=$(git describe --tags --always --dirty)
-    APP_VERSION="Version: ${git_sha}, build at: $(date -u --iso-8601='seconds')"
+    APP_VERSION="Version: ${git_sha}, build at: $(date -u +'%Y-%m-%dT%H:%M:%S%z')"
     echo "${APP_VERSION}"
 fi
 
@@ -18,9 +18,9 @@ function check_project()
         echo -e "  $ export PROJECT_ID=\"\$(gcloud config get-value project -q)\""
         exit 1
     fi
-    if [ -z ${REGION:+x} ]; then
+    if [ -z ${PROJECT_REGION:+x} ]; then
         echo "Error: Unkown region. Set region by:"
-        echo -e "  $ export REGION=\"\$(gcloud config get-value compute/region -q)\""
+        echo -e "  $ export PROJECT_REGION=\"\$(gcloud config get-value compute/region -q)\""
         exit 1
     fi
 
@@ -85,7 +85,7 @@ case ${COMMAND} in
                         gcloud compute addresses ${action} ${gip_name} --global
                         ;;
                     "region")
-                        gcloud compute addresses ${action} ${rip_name} --region ${REGION}
+                        gcloud compute addresses ${action} ${rip_name} --region ${PROJECT_REGION}
                         ;;
                     *)
                         echo "Error: Unkown ip args: $@"
@@ -103,8 +103,13 @@ case ${COMMAND} in
     "service")
         check_project
         action="${1:-describe}"
+        rip=""
         case ${action} in
-            "apply" | "delete" | "describe")
+            "apply")
+                action="kubectl ${action} -f -"
+                ;;
+            "delete" | "describe")
+                rip="NO_IP"
                 action="kubectl ${action} -f -"
                 ;;
             "test")
@@ -115,10 +120,12 @@ case ${COMMAND} in
                 exit 1
                 ;;
         esac
-        rip="$(gcloud compute addresses describe --quiet ${rip_name} --region ${REGION})"
         if [ -z ${rip:+x} ]; then
-            echo "Error: No region IP. Exiting ..."
-            exit 1
+            rip="$(gcloud compute addresses describe ${rip_name} --region ${PROJECT_REGION} | grep -Eo '([0-9]*\.){3}[0-9]*')"
+            if [ -z ${rip:+x} ]; then
+                echo "Error: No region IP. Exiting ..."
+                exit 1
+            fi
         fi
         REGION_STATIC_IP=${rip} envsubst < manifests/helloweb-service-static-ip.yaml | ${action}
         ;;
