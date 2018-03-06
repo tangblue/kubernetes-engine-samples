@@ -29,7 +29,7 @@ var version string
 var started time.Time
 
 func main() {
-	fmt.Println(version)
+	fmt.Println("Version:", version)
 	started = time.Now()
 
 	port := "8080"
