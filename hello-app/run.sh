@@ -7,7 +7,7 @@ rip_name="service-ip-${app_name}"
 
 if [ -z ${APP_VERSION:+x} ]; then
     git_sha=$(git describe --tags --always --dirty)
-    APP_VERSION="${git_sha}@$(date -u +'%Y-%m-%dT%H:%M:%S%z')"
+    APP_VERSION="${git_sha}@$(date +'%Y-%m-%dT%H:%M:%S%z')"
 fi
 
 function check_project()
