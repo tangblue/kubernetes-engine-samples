@@ -8,7 +8,6 @@ rip_name="service-ip-${app_name}"
 if [ -z ${APP_VERSION:+x} ]; then
     git_sha=$(git describe --tags --always --dirty)
     APP_VERSION="Version: ${git_sha}, build at: $(date -u +'%Y-%m-%dT%H:%M:%S%z')"
-    echo "${APP_VERSION}"
 fi
 
 function check_project()
@@ -33,7 +32,8 @@ shift 1
 
 case ${COMMAND} in
     "build")
-        CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X \"main.version=${APP_VERSION}\"" $@
+        echo "${APP_VERSION}"
+        CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X \"main.version=${APP_VERSION}\"" -o ${app_name} $@
         ;;
 
     "docker")
@@ -42,7 +42,7 @@ case ${COMMAND} in
         shift 1
         case ${action} in
             "build")
-                docker build . --build-arg APP_VERSION="${APP_VERSION}" -t ${DOCKER_IMAGE} $@
+                docker build . --build-arg APP_NAME="${app_name}" --build-arg APP_VERSION="${APP_VERSION}" -t ${DOCKER_IMAGE} $@
                 ;;
             "run")
                 docker run --rm -p 8080:8080 ${DOCKER_IMAGE} $@
