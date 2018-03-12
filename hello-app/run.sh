@@ -39,6 +39,13 @@ case ${COMMAND} in
         CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X \"main.version=${APP_VERSION}\"" -o ${APP_NAME} $@
         ;;
 
+    "run")
+        if [ -z ${APP_NAME:+x} ]; then
+            APP_NAME=${app_name}
+        fi
+        ./${APP_NAME} $@
+        ;;
+
     "docker")
         check_project
         action="${1}"
