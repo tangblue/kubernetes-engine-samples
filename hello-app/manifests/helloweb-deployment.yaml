@@ -24,7 +24,7 @@ spec:
                 matchLabels:
                   gitsha: "${GIT_SHA}"
                 matchExpressions:
-                  - {key: api, operator: In, values: [hello]}
+                  - {key: app, operator: In, values: [hello]}
                   - {key: tier, operator: In, values: [web]}
               topologyKey: kubernetes.io/hostname
       containers:
