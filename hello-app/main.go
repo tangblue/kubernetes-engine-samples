@@ -22,16 +22,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
-var version string
-var started time.Time
-
 func main() {
-	fmt.Println("Version:", version)
-	started = time.Now()
-
 	port := "8080"
 	if fromEnv := os.Getenv("PORT"); fromEnv != "" {
 		port = fromEnv
@@ -51,23 +44,6 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, world!\n")
 	fmt.Fprintf(w, "Version: %s\n", version)
 	fmt.Fprintf(w, "Hostname: %s\n", host)
-}
-
-func healthz(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
-	w.Write([]byte("ok"))
-}
-
-func readiness(w http.ResponseWriter, r *http.Request) {
-	errMsg := ""
-	duration := time.Now().Sub(started)
-	if duration.Seconds() < 10 {
-		errMsg += "Database not ok.\n"
-		http.Error(w, errMsg, http.StatusServiceUnavailable)
-	} else {
-		w.WriteHeader(200)
-		w.Write([]byte("ok"))
-	}
 }
 
 // [END all]
