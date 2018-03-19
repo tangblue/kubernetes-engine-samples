@@ -1,4 +1,4 @@
-FROM golang:1.8-alpine AS builder
+FROM golang:1-alpine AS builder
 ARG APP_VERSION=unknown
 ARG APP_NAME=app
 WORKDIR /build
