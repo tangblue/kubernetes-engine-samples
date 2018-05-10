@@ -13,17 +13,17 @@ fi
 function check_project()
 {
     if [ -z ${PROJECT_ID:+x} ]; then
-        echo "Error: Unkown project ID. Set project ID by:"
-        echo -e "  $ export PROJECT_ID=\"\$(gcloud config get-value project -q)\""
+        echo -e "Error: Unkown project ID. Set project ID by:
+  $ export PROJECT_ID=\"\$(gcloud config get-value project -q)\"" >&2
         exit 1
     fi
     if [ -z ${PROJECT_REGION:+x} ]; then
-        echo "Error: Unkown region. Set region by:"
-        echo -e "  $ export PROJECT_REGION=\"\$(gcloud config get-value compute/region -q)\""
+        echo -e "Error: Unkown region. Set region by:
+  $ export PROJECT_REGION=\"\$(gcloud config get-value compute/region -q)\"" >&2
         exit 1
     fi
 
-    echo "Project ID: ${PROJECT_ID}, Image: ${app_name}, Git SHA: ${git_sha}"
+    echo "Project ID: ${PROJECT_ID}, Image: ${app_name}, Git SHA: ${git_sha}" >&2
     export DOCKER_IMAGE="${gcr_host}/${PROJECT_ID}/${app_name}:${git_sha}"
 }
 
@@ -35,7 +35,7 @@ case ${COMMAND} in
         if [ -z ${APP_NAME:+x} ]; then
             APP_NAME=${app_name}
         fi
-        echo "${APP_NAME}: ${APP_VERSION}"
+        echo "${APP_NAME}: ${APP_VERSION}" >&2
         CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X \"main.version=${APP_VERSION}\"" -o ${APP_NAME} $@
         ;;
 
@@ -61,7 +61,7 @@ case ${COMMAND} in
                 gcloud docker -- push ${DOCKER_IMAGE}
                 ;;
             *)
-                echo "Error: Unkown docker args: $@"
+                echo "Error: Unkown docker args: $@" >&2
                 exit 1
                 ;;
         esac
@@ -78,7 +78,7 @@ case ${COMMAND} in
                 action="cat -"
                 ;;
             *)
-                echo "Error: Unkown deploy args: $@"
+                echo "Error: Unkown deploy args: $@" >&2
                 exit 1
                 ;;
         esac
@@ -98,13 +98,13 @@ case ${COMMAND} in
                         gcloud compute addresses ${action} ${rip_name} --region ${PROJECT_REGION}
                         ;;
                     *)
-                        echo "Error: Unkown ip args: $@"
+                        echo "Error: Unkown ip args: $@" >&2
                         exit 1
                         ;;
                 esac
                 ;;
             *)
-                echo "Error: Unkown ip args: $@"
+                echo "Error: Unkown ip args: $@" >&2
                 exit 1
                 ;;
         esac
@@ -126,14 +126,14 @@ case ${COMMAND} in
                 action="cat -"
                 ;;
             *)
-                echo "Error: Unkown service args: $@"
+                echo "Error: Unkown service args: $@" >&2
                 exit 1
                 ;;
         esac
         if [ -z ${rip:+x} ]; then
             rip="$(gcloud compute addresses describe ${rip_name} --region ${PROJECT_REGION} | grep -Eo '([0-9]*\.){3}[0-9]*')"
             if [ -z ${rip:+x} ]; then
-                echo "Error: No region IP. Exiting ..."
+                echo "Error: No region IP. Exiting ..." >&2
                 exit 1
             fi
         fi
@@ -147,7 +147,7 @@ case ${COMMAND} in
             "apply")
                 gip="$(gcloud compute addresses describe ${gip_name} --global | grep -Eo '([0-9]*\.){3}[0-9]*')"
                 if [ -z ${gip:+x} ]; then
-                    echo "Error: No global IP. Exiting ..."
+                    echo "Error: No global IP. Exiting ..." >&2
                     exit 1
                 fi
                 action="kubectl ${action} -f -"
@@ -159,7 +159,7 @@ case ${COMMAND} in
                 action="cat -"
                 ;;
             *)
-                echo "Error: Unkown service args: $@"
+                echo "Error: Unkown service args: $@" >&2
                 exit 1
                 ;;
         esac
@@ -167,6 +167,6 @@ case ${COMMAND} in
         ;;
 
     *)
-        echo "Unkown command: ${COMMAND}"
+        echo "Unkown command: ${COMMAND}" >&2
         ;;
 esac
